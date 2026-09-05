@@ -221,7 +221,7 @@
       padding: 24px; width: 100%; max-width: 410px;
       max-height: 88vh; overflow-y: auto;
       box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-      position: relative; animation: popIn 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     @keyframes popIn {
@@ -346,6 +346,7 @@
     <div class="map-container" id="mapa"></div>
   </div>
 
+  <!-- PALCO INICIAL (CASILLA 0) -->
   <div class="start-stage-wrapper">
     <div class="start-stage">
       <div class="start-stage-title">📍 Palco de Inicio (Casilla 0)</div>
@@ -555,7 +556,6 @@
     const AVATAR_DEFECTO = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%231CB0F6'/><circle cx='50' cy='40' r='20' fill='white'/><path d='M20,85 C20,65 35,60 50,60 C65,60 80,65 80,85' fill='white'/></svg>";
 
     let listaUsuariosGlobal = [];
-    let modalAbiertoUsuario = false;
 
     function generarCoordenadas100() {
       const inicioY = 5780;
@@ -577,21 +577,30 @@
       actSelect.innerHTML = htmlOptions;
     }
 
+    // Verifica si hay algún modal abierto actualmente
+    function hayModalAbierto() {
+      const modales = document.querySelectorAll('.modal');
+      for (let m of modales) {
+        if (m.style.display === 'flex') return true;
+      }
+      return false;
+    }
+
     window.onload = function() {
       generarCoordenadas100();
       poblarSelectSecciones();
       dibujarNodos();
       cargarUsuarios();
 
+      // Temporizador de 15 segundos para el Top 4
       setTimeout(function() {
-        if (!modalAbiertoUsuario) {
+        if (!hayModalAbierto()) {
           mostrarTop4();
         }
-      }, 5000);
+      }, 15000);
     };
 
     function abrirModal(id) { 
-      modalAbiertoUsuario = true;
       document.getElementById(id).style.display = 'flex'; 
     }
     
@@ -805,15 +814,21 @@
       return COORDENADAS[idx];
     }
 
-    // Procesa fotos manteniendo GIFs animados y optimizando JPG/PNG
-    function optimizarImagen(file, maxAncho = 300, calidad = 0.5) {
-      return new Promise((resolve) => {
+    // Compresión inteligente (mantiene animación GIF reduciendo escala si es necesario)
+    function optimizarImagen(file, maxAncho = 250, calidad = 0.4) {
+      return new Promise((resolve, reject) => {
         if (!file) { resolve(""); return; }
 
-        // Si es GIF, no se procesa en Canvas para preservar su movimiento
         if (file.type === "image/gif") {
+          // Si el GIF es muy grande (> 1.5MB), notifica al usuario
+          if (file.size > 1.5 * 1024 * 1024) {
+            alert("El GIF supera los 1.5MB. Por favor elige uno más liviano para evitar errores de conexión.");
+            reject(new Error("GIF demasiado grande"));
+            return;
+          }
           const reader = new FileReader();
           reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = () => reject(new Error("Error leyendo el GIF"));
           reader.readAsDataURL(file);
           return;
         }
@@ -843,6 +858,7 @@
             
             resolve(canvas.toDataURL('image/jpeg', calidad));
           };
+          img.onerror = () => reject(new Error("Error procesando imagen"));
         };
       });
     }
@@ -868,7 +884,14 @@
       if (!fotoFile) { alert("Por favor selecciona una foto."); return; }
 
       document.getElementById('loadRegistro').style.display = 'block';
-      const fotoOptimizado = await optimizarImagen(fotoFile, 300, 0.5);
+      let fotoOptimizado = "";
+      
+      try {
+        fotoOptimizado = await optimizarImagen(fotoFile, 250, 0.4);
+      } catch (err) {
+        document.getElementById('loadRegistro').style.display = 'none';
+        return;
+      }
 
       const datos = {
         action: 'registrarUsuario',
@@ -888,13 +911,13 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(datos)
         });
-        
+
         const textoRespuesta = await resp.text();
         let res;
         try {
           res = JSON.parse(textoRespuesta);
         } catch(pErr) {
-          throw new Error("El servidor no devolvió una respuesta válida. Revisa los permisos en Apps Script.");
+          throw new Error("Respuesta inválida del servidor. Verifica los permisos del despliegue en Apps Script.");
         }
 
         document.getElementById('loadRegistro').style.display = 'none';
@@ -920,7 +943,14 @@
       if (!evFile) { alert("Por favor selecciona tu foto de evidencia."); return; }
 
       document.getElementById('loadActualizar').style.display = 'block';
-      const evOptimizado = await optimizarImagen(evFile, 300, 0.5);
+      let evOptimizado = "";
+
+      try {
+        evOptimizado = await optimizarImagen(evFile, 250, 0.4);
+      } catch (err) {
+        document.getElementById('loadActualizar').style.display = 'none';
+        return;
+      }
 
       const datos = {
         action: 'actualizarEstatus',
@@ -940,13 +970,13 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(datos)
         });
-        
+
         const textoRespuesta = await resp.text();
         let res;
         try {
           res = JSON.parse(textoRespuesta);
         } catch(pErr) {
-          throw new Error("El servidor no devolvió una respuesta válida.");
+          throw new Error("Respuesta inválida del servidor.");
         }
 
         document.getElementById('loadActualizar').style.display = 'none';
