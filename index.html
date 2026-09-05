@@ -346,7 +346,6 @@
     <div class="map-container" id="mapa"></div>
   </div>
 
-  <!-- PALCO INICIAL (CASILLA 0) -->
   <div class="start-stage-wrapper">
     <div class="start-stage">
       <div class="start-stage-title">📍 Palco de Inicio (Casilla 0)</div>
@@ -377,7 +376,7 @@
 
   <div class="modal" id="modalExplicacion">
     <div class="modal-content" style="text-align: center;">
-      <span class="close-btn" onclick="cerrarModal('modalExplicacion')">&times;</span>
+      <span class="close-btn" onclick="cerrarModal('modalExplicacion')">×</span>
       <div style="margin-bottom: 10px;">
         <svg width="70" height="70" viewBox="0 0 100 100">
           <circle cx="50" cy="50" r="45" fill="#58CC02"/>
@@ -396,7 +395,7 @@
 
   <div class="modal" id="modalRegistro">
     <div class="modal-content">
-      <span class="close-btn" onclick="cerrarModal('modalRegistro')">&times;</span>
+      <span class="close-btn" onclick="cerrarModal('modalRegistro')">×</span>
       <h3 style="color: var(--duo-green); font-weight: 900; text-align: center; margin-bottom: 15px;">Crear mi Perfil</h3>
       
       <form id="formRegistro" onsubmit="guardarRegistro(event)">
@@ -421,7 +420,7 @@
           <input type="text" id="regLema" placeholder="Ej: ¡Listos para servir!">
         </div>
         <div class="form-group">
-          <label>Foto de Perfil * (Obligatorio)</label>
+          <label>Foto de Perfil * (Admite JPG, PNG y GIF animado)</label>
           <input type="file" id="regFoto" accept="image/*" required>
         </div>
 
@@ -433,7 +432,7 @@
 
   <div class="modal" id="modalActualizar">
     <div class="modal-content">
-      <span class="close-btn" onclick="cerrarModal('modalActualizar')">&times;</span>
+      <span class="close-btn" onclick="cerrarModal('modalActualizar')">×</span>
       <h3 style="color: var(--duo-blue); font-weight: 900; text-align: center; margin-bottom: 15px;">¡Actualiza tu Avance!</h3>
       
       <form id="formActualizar" onsubmit="guardarActualizacion(event)">
@@ -474,7 +473,7 @@
 
   <div class="modal" id="modalTop4">
     <div class="modal-content">
-      <span class="close-btn" onclick="cerrarModal('modalTop4')">&times;</span>
+      <span class="close-btn" onclick="cerrarModal('modalTop4')">×</span>
       <div class="podium-banner">
         ¡Estos chicos van en la delantera, preparándose para llegar a las naciones! 🌍🔥
       </div>
@@ -484,7 +483,7 @@
 
   <div class="modal" id="modalSubPodio">
     <div class="modal-content">
-      <span class="close-btn" onclick="cerrarModal('modalSubPodio')">&times;</span>
+      <span class="close-btn" onclick="cerrarModal('modalSubPodio')">×</span>
       <h3 style="color: var(--duo-blue-dark); font-weight: 900; text-align: center; margin-bottom: 5px;" id="subPodioTitulo">
         Usuarios en esta Casilla
       </h3>
@@ -497,7 +496,7 @@
 
   <div class="modal" id="modalFicha">
     <div class="modal-content profile-card">
-      <span class="close-btn" onclick="cerrarModal('modalFicha')">&times;</span>
+      <span class="close-btn" onclick="cerrarModal('modalFicha')">×</span>
       <div class="profile-avatar-lg" id="fichaFoto"></div>
       <div class="profile-name" id="fichaNombre">Usuario</div>
       <div class="profile-lema" id="fichaLema">"Lema personal"</div>
@@ -606,22 +605,26 @@
 
     function dibujarNodos() {
       const mapa = document.getElementById('mapa');
+      const fragment = document.createDocumentFragment();
+      
       COORDENADAS.forEach(c => {
         const node = document.createElement('div');
         node.className = (c.level === 100) ? 'node node-final' : 'node';
         node.style.left = c.x + 'px';
         node.style.top = c.y + 'px';
         node.innerText = (c.level === 100) ? '🏁' : c.level;
-
-        mapa.appendChild(node);
+        fragment.appendChild(node);
       });
+      
+      mapa.appendChild(fragment);
     }
 
     async function cargarUsuarios() {
       try {
         const resp = await fetch(`${API_URL}?action=obtenerUsuarios`, {
           method: 'GET',
-          redirect: 'follow'
+          redirect: 'follow',
+          cache: 'no-cache'
         });
         const usuarios = await resp.json();
         listaUsuariosGlobal = Array.isArray(usuarios) ? usuarios : [];
@@ -658,10 +661,10 @@
         }
       });
 
-      // Palco Inicial = Casilla 0
       if (usuariosPalco.length === 0) {
         palcoContainer.innerHTML = `<span style="font-size:0.75rem; color:#aaa; font-weight:700;">¡Todos los usuarios han avanzado al mapa! 🚀</span>`;
       } else {
+        const fragPalco = document.createDocumentFragment();
         usuariosPalco.forEach(u => {
           const avatar = document.createElement('div');
           avatar.className = 'user-avatar';
@@ -671,11 +674,12 @@
           avatar.style.backgroundImage = `url('${u.fotoUrl || u.foto || AVATAR_DEFECTO}')`;
           avatar.setAttribute('data-apodo', u.apodo);
           avatar.onclick = () => mostrarFichaUsuario(u);
-          palcoContainer.appendChild(avatar);
+          fragPalco.appendChild(avatar);
         });
+        palcoContainer.appendChild(fragPalco);
       }
 
-      // Mapa (Casilla 1 en adelante)
+      const fragMapa = document.createDocumentFragment();
       Object.keys(mapaCasillas).forEach(casillaNum => {
         const grupo = mapaCasillas[casillaNum];
         const coord = obtenerCoordenadaPorNivel(casillaNum);
@@ -691,7 +695,7 @@
           avatar.style.backgroundImage = `url('${u.fotoUrl || u.foto || AVATAR_DEFECTO}')`;
           avatar.setAttribute('data-apodo', u.apodo);
           avatar.onclick = (e) => { e.stopPropagation(); mostrarFichaUsuario(u); };
-          mapa.appendChild(avatar);
+          fragMapa.appendChild(avatar);
         } else {
           const badge = document.createElement('div');
           badge.className = 'multi-avatar-badge';
@@ -702,9 +706,10 @@
             e.stopPropagation();
             abrirSubPodioCasilla(casillaNum, grupo);
           };
-          mapa.appendChild(badge);
+          fragMapa.appendChild(badge);
         }
       });
+      mapa.appendChild(fragMapa);
     }
 
     function abrirSubPodioCasilla(casillaNum, grupo) {
@@ -800,9 +805,19 @@
       return COORDENADAS[idx];
     }
 
-    function optimizarImagen(file, maxAncho = 320, calidad = 0.5) {
+    // Procesa fotos manteniendo GIFs animados y optimizando JPG/PNG
+    function optimizarImagen(file, maxAncho = 300, calidad = 0.5) {
       return new Promise((resolve) => {
         if (!file) { resolve(""); return; }
+
+        // Si es GIF, no se procesa en Canvas para preservar su movimiento
+        if (file.type === "image/gif") {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+          return;
+        }
+
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = (e) => {
@@ -853,7 +868,7 @@
       if (!fotoFile) { alert("Por favor selecciona una foto."); return; }
 
       document.getElementById('loadRegistro').style.display = 'block';
-      const fotoOptimizado = await optimizarImagen(fotoFile, 320, 0.5);
+      const fotoOptimizado = await optimizarImagen(fotoFile, 300, 0.5);
 
       const datos = {
         action: 'registrarUsuario',
@@ -873,7 +888,14 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(datos)
         });
-        const res = await resp.json();
+        
+        const textoRespuesta = await resp.text();
+        let res;
+        try {
+          res = JSON.parse(textoRespuesta);
+        } catch(pErr) {
+          throw new Error("El servidor no devolvió una respuesta válida. Revisa los permisos en Apps Script.");
+        }
 
         document.getElementById('loadRegistro').style.display = 'none';
         if (res.exito) {
@@ -898,7 +920,7 @@
       if (!evFile) { alert("Por favor selecciona tu foto de evidencia."); return; }
 
       document.getElementById('loadActualizar').style.display = 'block';
-      const evOptimizado = await optimizarImagen(evFile, 320, 0.5);
+      const evOptimizado = await optimizarImagen(evFile, 300, 0.5);
 
       const datos = {
         action: 'actualizarEstatus',
@@ -918,7 +940,14 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(datos)
         });
-        const res = await resp.json();
+        
+        const textoRespuesta = await resp.text();
+        let res;
+        try {
+          res = JSON.parse(textoRespuesta);
+        } catch(pErr) {
+          throw new Error("El servidor no devolvió una respuesta válida.");
+        }
 
         document.getElementById('loadActualizar').style.display = 'none';
         if (res.exito) {
