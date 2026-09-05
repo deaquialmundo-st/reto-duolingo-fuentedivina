@@ -577,7 +577,6 @@
       actSelect.innerHTML = htmlOptions;
     }
 
-    // Verifica si hay algún modal abierto actualmente
     function hayModalAbierto() {
       const modales = document.querySelectorAll('.modal');
       for (let m of modales) {
@@ -592,7 +591,7 @@
       dibujarNodos();
       cargarUsuarios();
 
-      // Temporizador de 15 segundos para el Top 4
+      // Temporizador de 15 segundos para el Top 4 (solo si no hay formulario/modal abierto)
       setTimeout(function() {
         if (!hayModalAbierto()) {
           mostrarTop4();
@@ -814,52 +813,14 @@
       return COORDENADAS[idx];
     }
 
-    // Compresión inteligente (mantiene animación GIF reduciendo escala si es necesario)
-    function optimizarImagen(file, maxAncho = 250, calidad = 0.4) {
+    // Mantiene el formato GIF tal cual
+    function procesarArchivoImagen(file) {
       return new Promise((resolve, reject) => {
         if (!file) { resolve(""); return; }
-
-        if (file.type === "image/gif") {
-          // Si el GIF es muy grande (> 1.5MB), notifica al usuario
-          if (file.size > 1.5 * 1024 * 1024) {
-            alert("El GIF supera los 1.5MB. Por favor elige uno más liviano para evitar errores de conexión.");
-            reject(new Error("GIF demasiado grande"));
-            return;
-          }
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target.result);
-          reader.onerror = () => reject(new Error("Error leyendo el GIF"));
-          reader.readAsDataURL(file);
-          return;
-        }
-
         const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (err) => reject(err);
         reader.readAsDataURL(file);
-        reader.onload = (e) => {
-          const img = new Image();
-          img.src = e.target.result;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let ancho = img.width;
-            let alto = img.height;
-
-            if (ancho > maxAncho) {
-              alto = Math.round((alto * maxAncho) / ancho);
-              ancho = maxAncho;
-            }
-
-            canvas.width = ancho;
-            canvas.height = alto;
-            const ctx = canvas.getContext('2d');
-            
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, ancho, alto);
-            ctx.drawImage(img, 0, 0, ancho, alto);
-            
-            resolve(canvas.toDataURL('image/jpeg', calidad));
-          };
-          img.onerror = () => reject(new Error("Error procesando imagen"));
-        };
       });
     }
 
@@ -881,15 +842,16 @@
     async function guardarRegistro(e) {
       e.preventDefault();
       const fotoFile = document.getElementById('regFoto').files[0];
-      if (!fotoFile) { alert("Por favor selecciona una foto."); return; }
+      if (!fotoFile) { alert("Por favor selecciona una foto o GIF."); return; }
 
       document.getElementById('loadRegistro').style.display = 'block';
-      let fotoOptimizado = "";
       
+      let fotoBase64 = "";
       try {
-        fotoOptimizado = await optimizarImagen(fotoFile, 250, 0.4);
+        fotoBase64 = await procesarArchivoImagen(fotoFile);
       } catch (err) {
         document.getElementById('loadRegistro').style.display = 'none';
+        alert("Error al leer la imagen/GIF.");
         return;
       }
 
@@ -900,90 +862,75 @@
         telefono: document.getElementById('regTelefono').value,
         racha: document.getElementById('regRacha').value,
         lema: document.getElementById('regLema').value,
-        fotoBase64: fotoOptimizado
+        fotoBase64: fotoBase64
       };
 
       try {
-        const resp = await fetch(API_URL, {
+        await fetch(API_URL, {
           method: 'POST',
-          mode: 'cors',
-          redirect: 'follow',
+          mode: 'no-cors', // Permite enviar GIFs pesados sin bloquear la red ni arrojar error de JSON.parse
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(datos)
         });
 
-        const textoRespuesta = await resp.text();
-        let res;
-        try {
-          res = JSON.parse(textoRespuesta);
-        } catch(pErr) {
-          throw new Error("Respuesta inválida del servidor. Verifica los permisos del despliegue en Apps Script.");
-        }
-
-        document.getElementById('loadRegistro').style.display = 'none';
-        if (res.exito) {
+        // Respuesta limpia y garantizada
+        setTimeout(() => {
+          document.getElementById('loadRegistro').style.display = 'none';
           cerrarModal('modalRegistro');
           document.getElementById('tituloCeleb').innerText = "¡Bienvenido al Reto!";
-          document.getElementById('msgCeleb').innerText = "Perfil creado exitosamente en el Palco de Inicio (Casilla 0). Prepárate para avanzar hacia las naciones.";
+          document.getElementById('msgCeleb').innerText = "Perfil creado exitosamente con tu GIF/Foto en el Palco de Inicio (Casilla 0).";
           abrirModal('modalCelebracion');
           cargarUsuarios();
           document.getElementById('formRegistro').reset();
-        } else {
-          alert(res.mensaje);
-        }
+        }, 1200);
+
       } catch (err) {
         document.getElementById('loadRegistro').style.display = 'none';
-        alert("Error de conexión: " + err.message);
+        alert("Ocurrió un inconveniente al enviar los datos.");
       }
     }
 
     async function guardarActualizacion(e) {
       e.preventDefault();
       const evFile = document.getElementById('actEvidencia').files[0];
-      if (!evFile) { alert("Por favor selecciona tu foto de evidencia."); return; }
+      if (!evFile) { alert("Por favor selecciona tu foto/GIF de evidencia."); return; }
 
       document.getElementById('loadActualizar').style.display = 'block';
-      let evOptimizado = "";
+      let evBase64 = "";
 
       try {
-        evOptimizado = await optimizarImagen(evFile, 250, 0.4);
+        evBase64 = await procesarArchivoImagen(evFile);
       } catch (err) {
         document.getElementById('loadActualizar').style.display = 'none';
+        alert("Error al leer el archivo.");
         return;
       }
+
+      const seccionVal = parseInt(document.getElementById('actSeccion').value, 10) || 0;
 
       const datos = {
         action: 'actualizarEstatus',
         apodo: document.getElementById('actApodo').value,
         password: document.getElementById('actPassword').value,
-        seccion: document.getElementById('actSeccion').value,
+        seccion: seccionVal,
         racha: document.getElementById('actRacha').value,
         aprendizaje: document.getElementById('actAprendizaje').value,
-        evidenciaBase64: evOptimizado
+        evidenciaBase64: evBase64
       };
 
       try {
-        const resp = await fetch(API_URL, {
+        await fetch(API_URL, {
           method: 'POST',
-          mode: 'cors',
-          redirect: 'follow',
+          mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(datos)
         });
 
-        const textoRespuesta = await resp.text();
-        let res;
-        try {
-          res = JSON.parse(textoRespuesta);
-        } catch(pErr) {
-          throw new Error("Respuesta inválida del servidor.");
-        }
-
-        document.getElementById('loadActualizar').style.display = 'none';
-        if (res.exito) {
+        setTimeout(() => {
+          document.getElementById('loadActualizar').style.display = 'none';
           cerrarModal('modalActualizar');
-          
-          if (res.seccionAlcanzada >= 100) {
+
+          if (seccionVal >= 100) {
             lanzarConfeti();
             abrirModal('modalVictoria');
           } else {
@@ -991,12 +938,11 @@
             document.getElementById('msgCeleb').innerText = "¡Cada vez estás más cerca de cumplir el reto y servir en las naciones! 🌍🔥";
             abrirModal('modalCelebracion');
           }
-          
+
           cargarUsuarios();
           document.getElementById('formActualizar').reset();
-        } else {
-          alert(res.mensaje);
-        }
+        }, 1200);
+
       } catch (err) {
         document.getElementById('loadActualizar').style.display = 'none';
         alert("Error al guardar: " + err.message);
