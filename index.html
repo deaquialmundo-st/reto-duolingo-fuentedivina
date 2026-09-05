@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Reto Duolingo - Misiones a las Naciones</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --duo-green: #58cc02;
+      --duo-green-dark: #46a302;
+      --duo-blue: #1cb0f6;
+      --duo-blue-dark: #1899d6;
+      --duo-yellow: #ffc800;
+      --duo-yellow-dark: #e5b200;
+      --duo-gray: #e5e5e5;
+      --duo-dark: #0d2238;
+      --wa-green: #25d366;
+      --wa-green-dark: #128c7e;
+      --gold-gradient: linear-gradient(135deg, #ffd700 0%, #ffa500 50%, #ff8c00 100%);
+    }
+
+    * { box-sizing: border-box; font-family: 'Nunito', sans-serif; margin: 0; padding: 0; }
+    
+    body { 
+      background: var(--duo-dark); 
+      color: #3c3c3c; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      min-height: 100vh; 
+      padding-bottom: 110px; 
+    }
+
+    header { 
+      background: white; 
+      width: 100%; 
+      padding: 10px 15px; 
+      text-align: center; 
+      border-bottom: 4px solid var(--duo-gray); 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+      position: sticky; top: 0; z-index: 100; 
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px;
+    }
+    .header-title { display: flex; align-items: center; gap: 8px; font-weight: 900; color: var(--duo-green); font-size: 1.25rem; }
+    .header-subtitle { font-size: 0.8rem; font-weight: 800; color: #666; margin-bottom: 2px; }
+    
+    .community-counter {
+      background: #f0f7ff;
+      border: 2px solid var(--duo-blue);
+      color: var(--duo-blue-dark);
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 900;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    }
+
+    .map-wrapper { 
+      width: 100%; 
+      max-width: 440px; 
+      padding: 0 10px; 
+      margin-top: 10px;
+    }
+
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 5866px; 
+      border-radius: 32px 32px 0 0;
+      border: 6px solid #1a3a5c;
+      border-bottom: none;
+      box-shadow: 0 12px 0 var(--duo-dark), 0 15px 25px rgba(0,0,0,0.5);
+      overflow: visible;
+      background-image: url('https://lh3.googleusercontent.com/d/1fshe2I8xBsRJ9RWav0pfMZsD_Endn3k4=s0');
+      background-size: cover;
+      background-position: top center;
+      background-repeat: no-repeat;
+    }
+
+    .start-stage-wrapper {
+      width: 100%; max-width: 440px;
+      padding: 0 10px 20px 10px;
+    }
+    .start-stage {
+      background: linear-gradient(135deg, #1c3d5a, #112a44);
+      border: 6px solid #1a3a5c;
+      border-top: 3px solid var(--duo-yellow);
+      border-radius: 0 0 32px 32px;
+      padding: 16px 12px;
+      text-align: center;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    }
+    .start-stage-title {
+      color: var(--duo-yellow);
+      font-size: 0.88rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .start-stage-avatars {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      min-height: 45px;
+    }
+
+    .node {
+      position: absolute;
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffde00 0%, #ffc800 100%);
+      box-shadow: 0 5px 0 var(--duo-yellow-dark), 0 6px 10px rgba(0,0,0,0.3);
+      border: 3px solid white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; color: #503d00; font-size: 1.1rem;
+      z-index: 5; transform: translate(-50%, -50%);
+    }
+
+    .node-final {
+      width: 65px; height: 65px;
+      background: linear-gradient(180deg, #ff4b4b 0%, #ea2b2b 100%);
+      box-shadow: 0 6px 0 #b01b1b, 0 8px 15px rgba(0,0,0,0.4);
+      color: white; font-size: 1.4rem;
+    }
+
+    .user-avatar {
+      position: absolute;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+      z-index: 10;
+      transform: translate(-50%, -100%);
+      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      background-size: cover; background-position: center;
+      background-color: var(--duo-blue);
+      cursor: pointer;
+    }
+
+    .user-avatar::after {
+      content: attr(data-apodo);
+      position: absolute;
+      bottom: -20px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: white; font-size: 0.65rem; font-weight: 900;
+      padding: 3px 8px; border-radius: 12px; white-space: nowrap;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .multi-avatar-badge {
+      position: absolute;
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1cb0f6, #0d2238);
+      border: 3.5px solid var(--duo-yellow);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+      z-index: 12;
+      transform: translate(-50%, -100%);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; color: white; font-size: 1.05rem;
+      cursor: pointer;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: translate(-50%, -100%) scale(1); }
+      50% { transform: translate(-50%, -100%) scale(1.08); }
+      100% { transform: translate(-50%, -100%) scale(1); }
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(13, 34, 56, 0.95);
+      backdrop-filter: blur(8px);
+      border-top: 3px solid rgba(255,255,255,0.1);
+      padding: 10px 12px 14px 12px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 999;
+      box-shadow: 0 -8px 20px rgba(0,0,0,0.4);
+    }
+
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: transparent; border: none; color: white; font-weight: 800; font-size: 0.72rem;
+      cursor: pointer; text-decoration: none; flex: 1; padding: 4px;
+    }
+
+    .nav-btn-icon {
+      width: 44px; height: 44px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; margin-bottom: 3px; box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+      transition: transform 0.1s;
+    }
+    .nav-item:active .nav-btn-icon { transform: translateY(3px); box-shadow: none; }
+
+    .btn-icon-green { background: var(--duo-green); box-shadow: 0 4px 0 var(--duo-green-dark); }
+    .btn-icon-blue { background: var(--duo-blue); box-shadow: 0 4px 0 var(--duo-blue-dark); }
+    .btn-icon-yellow { background: var(--duo-yellow); box-shadow: 0 4px 0 var(--duo-yellow-dark); color: #403000; }
+    .btn-icon-wa { background: var(--wa-green); box-shadow: 0 4px 0 var(--wa-green-dark); }
+
+    .modal {
+      display: none; position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(5px);
+      z-index: 2000; align-items: center; justify-content: center;
+      padding: 15px;
+    }
+
+    .modal-content {
+      background: white; border-radius: 28px;
+      padding: 24px; width: 100%; max-width: 410px;
+      max-height: 88vh; overflow-y: auto;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+      position: relative; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.6rem; font-weight: 900; color: #bbb; cursor: pointer; }
+
+    .form-group { margin-bottom: 14px; text-align: left; }
+    .form-group label { display: block; font-weight: 800; font-size: 0.85rem; color: #4b4b4b; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 12px; border: 2px solid var(--duo-gray);
+      border-radius: 14px; font-weight: 700; font-size: 0.95rem; outline: none; background: #f7f7f7;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--duo-blue); background: white; }
+
+    .btn-modal {
+      width: 100%; padding: 14px; border: none; border-radius: 18px;
+      font-weight: 900; font-size: 1rem; text-transform: uppercase;
+      cursor: pointer; color: white; margin-top: 10px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
+    }
+    .btn-modal-green { background: var(--duo-green); box-shadow: 0 5px 0 var(--duo-green-dark); }
+    .btn-modal-blue { background: var(--duo-blue); box-shadow: 0 5px 0 var(--duo-blue-dark); }
+
+    .podium-banner {
+      background: linear-gradient(135deg, #1c3d5a, #0d2238);
+      color: #ffde00; padding: 12px; border-radius: 18px;
+      text-align: center; font-weight: 900; font-size: 0.88rem; line-height: 1.35;
+      margin-bottom: 16px; border: 2px solid var(--duo-yellow); box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .podium-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .podium-card {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      border-radius: 18px; background: #f8f9fa; border: 2px solid var(--duo-gray);
+    }
+    .podium-card-1 { border-color: #ffc800; background: #fffdf0; }
+    .podium-card-2 { border-color: #a0a0a0; background: #f4f5f7; }
+    .podium-card-3 { border-color: #cd7f32; background: #fdf8f5; }
+
+    .podium-card-gold {
+      background: var(--gold-gradient) !important;
+      border: 3px solid #ffffff !important;
+      color: #3b2300 !important;
+      box-shadow: 0 6px 15px rgba(255, 215, 0, 0.4);
+    }
+    .podium-card-gold .podium-name { color: #3b2300 !important; }
+    .podium-card-gold .podium-stats { color: #5a3a00 !important; font-weight: 900 !important; }
+
+    .podium-rank { font-size: 1.3rem; font-weight: 900; width: 32px; text-align: center; }
+    .podium-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background-size: cover; background-position: center; border: 2px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    }
+    .podium-info { flex: 1; }
+    .podium-name { font-weight: 900; color: #222; font-size: 0.95rem; }
+    .podium-stats { font-weight: 700; color: #666; font-size: 0.82rem; }
+
+    .profile-card { text-align: center; }
+    .profile-avatar-lg {
+      width: 90px; height: 90px; border-radius: 50%;
+      margin: 0 auto 12px auto; background-size: cover; background-position: center;
+      border: 4px solid var(--duo-blue); box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+    }
+    .profile-name { font-size: 1.4rem; font-weight: 900; color: #222; }
+    .profile-lema { font-size: 0.88rem; font-weight: 700; color: #666; font-style: italic; margin-top: 4px; }
+    
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    .profile-box { background: #f0f7ff; border-radius: 16px; padding: 12px; border: 2px solid #d0e4ff; }
+    .profile-box-val { font-size: 1.2rem; font-weight: 900; color: var(--duo-blue-dark); }
+    .profile-box-lbl { font-size: 0.72rem; font-weight: 800; color: #555; text-transform: uppercase; }
+
+    .honesty-note {
+      background: #fff9db; border-left: 4px solid var(--duo-yellow);
+      padding: 10px 12px; border-radius: 10px; font-size: 0.78rem;
+      color: #735e00; margin-top: 10px; font-weight: 700; line-height: 1.3;
+    }
+
+    .victory-modal {
+      background: linear-gradient(135deg, #0d2238 0%, #1c3d5a 100%) !important;
+      color: white !important; text-align: center !important; border: 4px solid var(--duo-yellow) !important;
+    }
+    
+    .confetti-wrapper {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; overflow: hidden; z-index: 1;
+    }
+    .confetti-piece {
+      position: absolute; width: 10px; height: 18px; background: var(--duo-yellow);
+      top: -20px; opacity: 0.9; animation: confettiFall 3.5s infinite linear;
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(800px) rotate(720deg); opacity: 0; }
+    }
+
+    .loading { display: none; text-align: center; font-weight: 800; color: var(--duo-blue); margin-top: 12px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title">
+      <svg width="26" height="26" viewBox="0 0 512 512" fill="none">
+        <circle cx="256" cy="256" r="256" fill="#58CC02"/>
+        <circle cx="180" cy="210" r="45" fill="white"/><circle cx="332" cy="210" r="45" fill="white"/>
+        <circle cx="180" cy="210" r="20" fill="#3C3C3C"/><circle cx="332" cy="210" r="20" fill="#3C3C3C"/>
+        <path d="M210 280 Q256 320 302 280" stroke="#FFC800" stroke-width="25" stroke-linecap="round" fill="none"/>
+      </svg>
+      Reto Duolingo
+    </div>
+    <div class="header-subtitle">¡Misiones a las Naciones! 🌍🔥</div>
+    <div class="community-counter">
+      👤 <span id="userCount">0</span> Users en la Ruta
+    </div>
+  </header>
+
+  <div class="map-wrapper">
+    <div class="map-container" id="mapa"></div>
+  </div>
+
+  <!-- PALCO INICIAL (CASILLA 0) -->
+  <div class="start-stage-wrapper">
+    <div class="start-stage">
+      <div class="start-stage-title">📍 Palco de Inicio (Casilla 0)</div>
+      <div class="start-stage-avatars" id="palcoAvatares">
+        <span style="font-size:0.75rem; color:#aaa; font-weight:700;">No hay usuarios en espera</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="abrirModal('modalExplicacion')">
+      <div class="nav-btn-icon btn-icon-green">🟢</div>
+      <span>#1 Unirme</span>
+    </button>
+    <button class="nav-item" onclick="abrirModal('modalActualizar')">
+      <div class="nav-btn-icon btn-icon-blue">🔵</div>
+      <span>#2 Avance</span>
+    </button>
+    <button class="nav-item" onclick="abrirTop4Manual()">
+      <div class="nav-btn-icon btn-icon-yellow">🏆</div>
+      <span>Top 4</span>
+    </button>
+    <a href="https://chat.whatsapp.com/TU_LINK_DE_GRUPO" target="_blank" class="nav-item">
+      <div class="nav-btn-icon btn-icon-wa">💬</div>
+      <span>Unirte</span>
+    </a>
+  </nav>
+
+  <div class="modal" id="modalExplicacion">
+    <div class="modal-content" style="text-align: center;">
+      <span class="close-btn" onclick="cerrarModal('modalExplicacion')">&times;</span>
+      <div style="margin-bottom: 10px;">
+        <svg width="70" height="70" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="#58CC02"/>
+          <circle cx="35" cy="40" r="12" fill="white"/><circle cx="35" cy="40" r="5" fill="#333"/>
+          <circle cx="65" cy="40" r="12" fill="white"/><circle cx="65" cy="40" r="5" fill="#333"/>
+          <polygon points="40,50 60,50 50,70" fill="#FFC800"/>
+        </svg>
+      </div>
+      <h2 style="color: var(--duo-green); font-weight: 900;">¡Bienvenido al Reto!</h2>
+      <p style="margin: 15px 0; font-weight: 700; font-size: 0.9rem; color: #555; line-height: 1.4;">
+        Este reto impulsará nuestro inglés mediante la constancia diaria en Duolingo. ¡Nos preparamos para servir en las misiones a las naciones!
+      </p>
+      <button class="btn-modal btn-modal-green" onclick="cerrarModal('modalExplicacion'); abrirModal('modalRegistro');">¡QUIERO SER PARTE DEL RETO!</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modalRegistro">
+    <div class="modal-content">
+      <span class="close-btn" onclick="cerrarModal('modalRegistro')">&times;</span>
+      <h3 style="color: var(--duo-green); font-weight: 900; text-align: center; margin-bottom: 15px;">Crear mi Perfil</h3>
+      
+      <form id="formRegistro" onsubmit="guardarRegistro(event)">
+        <div class="form-group">
+          <label>Apodo o Usuario único *</label>
+          <input type="text" id="regApodo" required placeholder="Ej: JuanMisionero">
+        </div>
+        <div class="form-group">
+          <label>Contraseña *</label>
+          <input type="password" id="regPassword" required placeholder="Crea tu contraseña">
+        </div>
+        <div class="form-group">
+          <label>Número de WhatsApp *</label>
+          <input type="tel" id="regTelefono" required placeholder="+504 9999-9999">
+        </div>
+        <div class="form-group">
+          <label>Racha Actual (Días de racha) *</label>
+          <input type="number" id="regRacha" min="0" value="1" required placeholder="Ej: 12">
+        </div>
+        <div class="form-group">
+          <label>Lema o Estado personal</label>
+          <input type="text" id="regLema" placeholder="Ej: ¡Listos para servir!">
+        </div>
+        <div class="form-group">
+          <label>Foto de Perfil * (Obligatorio)</label>
+          <input type="file" id="regFoto" accept="image/*" required>
+        </div>
+
+        <button type="submit" class="btn-modal btn-modal-green">REGISTRARME E INICIAR</button>
+        <div class="loading" id="loadRegistro">Guardando tu perfil... 🦉</div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="modalActualizar">
+    <div class="modal-content">
+      <span class="close-btn" onclick="cerrarModal('modalActualizar')">&times;</span>
+      <h3 style="color: var(--duo-blue); font-weight: 900; text-align: center; margin-bottom: 15px;">¡Actualiza tu Avance!</h3>
+      
+      <form id="formActualizar" onsubmit="guardarActualizacion(event)">
+        <div class="form-group">
+          <label>Tu Apodo *</label>
+          <input type="text" id="actApodo" required placeholder="Tu apodo registrado">
+        </div>
+        <div class="form-group">
+          <label>Tu Contraseña *</label>
+          <input type="password" id="actPassword" required placeholder="Tu contraseña">
+        </div>
+        <div class="form-group">
+          <label>Nueva Sección / Lección Alcanzada *</label>
+          <select id="actSeccion" required></select>
+        </div>
+        <div class="form-group">
+          <label>Racha de Días Actualizada *</label>
+          <input type="number" id="actRacha" min="0" required placeholder="Ej: 15">
+        </div>
+        <div class="form-group">
+          <label>¿Qué aprendiste de nuevo hoy? *</label>
+          <textarea id="actAprendizaje" rows="2" required placeholder="Ej: Lección de viajes y verbos"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Foto de Evidencia (Screenshot) *</label>
+          <input type="file" id="actEvidencia" accept="image/*" required>
+        </div>
+
+        <div class="honesty-note">
+          🤝 Confiamos en tu honestidad e integridad en que has sido honesto con la evidencia, un encargado la revisará.
+        </div>
+
+        <button type="submit" class="btn-modal btn-modal-blue">GUARDAR AVANCE</button>
+        <div class="loading" id="loadActualizar">Optimizando y subiendo evidencia... 🚀</div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="modalTop4">
+    <div class="modal-content">
+      <span class="close-btn" onclick="cerrarModal('modalTop4')">&times;</span>
+      <div class="podium-banner">
+        ¡Estos chicos van en la delantera, preparándose para llegar a las naciones! 🌍🔥
+      </div>
+      <div class="podium-list" id="podiumContainer"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalSubPodio">
+    <div class="modal-content">
+      <span class="close-btn" onclick="cerrarModal('modalSubPodio')">&times;</span>
+      <h3 style="color: var(--duo-blue-dark); font-weight: 900; text-align: center; margin-bottom: 5px;" id="subPodioTitulo">
+        Usuarios en esta Casilla
+      </h3>
+      <p style="text-align: center; font-size: 0.78rem; font-weight: 800; color: #777; margin-bottom: 15px;">
+        Ordenados de mayor a menor racha 🔥. Haz clic en cualquiera para ver su Ficha.
+      </p>
+      <div class="podium-list" id="subPodioContainer"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalFicha">
+    <div class="modal-content profile-card">
+      <span class="close-btn" onclick="cerrarModal('modalFicha')">&times;</span>
+      <div class="profile-avatar-lg" id="fichaFoto"></div>
+      <div class="profile-name" id="fichaNombre">Usuario</div>
+      <div class="profile-lema" id="fichaLema">"Lema personal"</div>
+
+      <div class="profile-grid">
+        <div class="profile-box">
+          <div class="profile-box-val" id="fichaSeccion">Sección 0</div>
+          <div class="profile-box-lbl">Sección Duolingo</div>
+        </div>
+        <div class="profile-box">
+          <div class="profile-box-val" id="fichaRacha">🔥 0</div>
+          <div class="profile-box-lbl">Días de Racha</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalVictoria">
+    <div class="modal-content victory-modal">
+      <div class="confetti-wrapper" id="confettiContainer"></div>
+      <div style="font-size: 4rem; margin-bottom: 10px;">👑🌍</div>
+      <h1 style="color: var(--duo-yellow); font-weight: 900; font-size: 1.8rem; margin-bottom: 12px; line-height: 1.2;">
+        ¡VICTORIA ABSOLUTA!
+      </h1>
+      <p style="font-size: 0.95rem; font-weight: 800; line-height: 1.5; color: #f0f7ff; margin-bottom: 20px;">
+        "¡Felicidades, has conquistado la Ruta de las Naciones! 🌍 Has demostrado constancia, disciplina y esfuerzo. Tu inglés está listo: ¡las naciones te esperan para tu próxima gran misión!"
+      </p>
+      <button class="btn-modal btn-modal-green" style="position: relative; z-index: 10;" onclick="cerrarModal('modalVictoria')">
+        ¡Aceptar mi Misión! 🚀
+      </button>
+    </div>
+  </div>
+
+  <div class="modal" id="modalCelebracion">
+    <div class="modal-content" style="text-align: center;">
+      <div style="margin-bottom: 10px;">
+        <svg width="70" height="70" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="#FFC800"/>
+          <circle cx="35" cy="40" r="12" fill="white"/><circle cx="35" cy="40" r="5" fill="#333"/>
+          <circle cx="65" cy="40" r="12" fill="white"/><circle cx="65" cy="40" r="5" fill="#333"/>
+          <path d="M30,60 Q50,80 70,60" stroke="white" stroke-width="6" fill="none"/>
+        </svg>
+      </div>
+      <h2 style="color: var(--duo-yellow-dark); font-weight: 900; font-size: 1.3rem;" id="tituloCeleb">Avance actualizado</h2>
+      <p style="margin: 15px 0; font-weight: 700; color: #444; font-size: 0.88rem; line-height: 1.4;" id="msgCeleb">
+        ¡Cada vez estás más cerca de cumplir el reto y servir en las naciones! 🌍🔥
+      </p>
+      <button class="btn-modal btn-modal-green" onclick="cerrarModal('modalCelebracion')">Ver mi avance en el Mapa</button>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbz6b8wTqcikZNO2IN78SQGxtZkMXcigfa-nhh4PCLdTCL_wlLktrnakqhu1UyUxl_Sc/exec";
+    const TOTAL_NIVELES = 100;
+    const COORDENADAS = [];
+    const AVATAR_DEFECTO = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%231CB0F6'/><circle cx='50' cy='40' r='20' fill='white'/><path d='M20,85 C20,65 35,60 50,60 C65,60 80,65 80,85' fill='white'/></svg>";
+
+    let listaUsuariosGlobal = [];
+    let modalAbiertoUsuario = false;
+
+    function generarCoordenadas100() {
+      const inicioY = 5780;
+      const pasoY = 57.2;
+      
+      for (let i = 1; i <= TOTAL_NIVELES; i++) {
+        const posY = inicioY - ((i - 1) * pasoY);
+        const posX = 210 + Math.sin(i * 0.42) * 110;
+        COORDENADAS.push({ level: i, x: posX, y: posY });
+      }
+    }
+
+    function poblarSelectSecciones() {
+      const actSelect = document.getElementById('actSeccion');
+      let htmlOptions = '<option value="" disabled selected>Selecciona una Sección...</option>';
+      for (let i = 1; i <= 100; i++) {
+        htmlOptions += `<option value="${i}">Sección / Lección ${i}</option>`;
+      }
+      actSelect.innerHTML = htmlOptions;
+    }
+
+    window.onload = function() {
+      generarCoordenadas100();
+      poblarSelectSecciones();
+      dibujarNodos();
+      cargarUsuarios();
+
+      setTimeout(function() {
+        if (!modalAbiertoUsuario) {
+          mostrarTop4();
+        }
+      }, 5000);
+    };
+
+    function abrirModal(id) { 
+      modalAbiertoUsuario = true;
+      document.getElementById(id).style.display = 'flex'; 
+    }
+    
+    function cerrarModal(id) { 
+      document.getElementById(id).style.display = 'none'; 
+    }
+
+    function abrirTop4Manual() {
+      mostrarTop4();
+    }
+
+    function dibujarNodos() {
+      const mapa = document.getElementById('mapa');
+      COORDENADAS.forEach(c => {
+        const node = document.createElement('div');
+        node.className = (c.level === 100) ? 'node node-final' : 'node';
+        node.style.left = c.x + 'px';
+        node.style.top = c.y + 'px';
+        node.innerText = (c.level === 100) ? '🏁' : c.level;
+
+        mapa.appendChild(node);
+      });
+    }
+
+    async function cargarUsuarios() {
+      try {
+        const resp = await fetch(`${API_URL}?action=obtenerUsuarios`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        const usuarios = await resp.json();
+        listaUsuariosGlobal = Array.isArray(usuarios) ? usuarios : [];
+        document.getElementById('userCount').innerText = listaUsuariosGlobal.length;
+        renderizarUsuariosYPalco(listaUsuariosGlobal);
+      } catch (err) {
+        console.error("Error al cargar usuarios:", err);
+      }
+    }
+
+    function renderizarUsuariosYPalco(usuarios) {
+      document.querySelectorAll('.user-avatar, .multi-avatar-badge').forEach(el => el.remove());
+      
+      const palcoContainer = document.getElementById('palcoAvatares');
+      palcoContainer.innerHTML = "";
+      
+      const mapa = document.getElementById('mapa');
+      if (!usuarios || usuarios.length === 0) {
+        palcoContainer.innerHTML = `<span style="font-size:0.75rem; color:#aaa; font-weight:700;">No hay usuarios en espera</span>`;
+        return;
+      }
+
+      const mapaCasillas = {};
+      const usuariosPalco = [];
+
+      usuarios.forEach(u => {
+        const casillaReal = parseInt(u.seccionAlcanzada || u.secActual, 10) || 0;
+        
+        if (casillaReal === 0) {
+          usuariosPalco.push(u);
+        } else {
+          if (!mapaCasillas[casillaReal]) mapaCasillas[casillaReal] = [];
+          mapaCasillas[casillaReal].push(u);
+        }
+      });
+
+      // Palco Inicial = Casilla 0
+      if (usuariosPalco.length === 0) {
+        palcoContainer.innerHTML = `<span style="font-size:0.75rem; color:#aaa; font-weight:700;">¡Todos los usuarios han avanzado al mapa! 🚀</span>`;
+      } else {
+        usuariosPalco.forEach(u => {
+          const avatar = document.createElement('div');
+          avatar.className = 'user-avatar';
+          avatar.style.position = 'relative';
+          avatar.style.transform = 'none';
+          avatar.style.left = 'auto'; avatar.style.top = 'auto';
+          avatar.style.backgroundImage = `url('${u.fotoUrl || u.foto || AVATAR_DEFECTO}')`;
+          avatar.setAttribute('data-apodo', u.apodo);
+          avatar.onclick = () => mostrarFichaUsuario(u);
+          palcoContainer.appendChild(avatar);
+        });
+      }
+
+      // Mapa (Casilla 1 en adelante)
+      Object.keys(mapaCasillas).forEach(casillaNum => {
+        const grupo = mapaCasillas[casillaNum];
+        const coord = obtenerCoordenadaPorNivel(casillaNum);
+
+        if (!coord) return;
+
+        if (grupo.length === 1) {
+          const u = grupo[0];
+          const avatar = document.createElement('div');
+          avatar.className = 'user-avatar';
+          avatar.style.left = coord.x + 'px';
+          avatar.style.top = coord.y + 'px';
+          avatar.style.backgroundImage = `url('${u.fotoUrl || u.foto || AVATAR_DEFECTO}')`;
+          avatar.setAttribute('data-apodo', u.apodo);
+          avatar.onclick = (e) => { e.stopPropagation(); mostrarFichaUsuario(u); };
+          mapa.appendChild(avatar);
+        } else {
+          const badge = document.createElement('div');
+          badge.className = 'multi-avatar-badge';
+          badge.style.left = coord.x + 'px';
+          badge.style.top = coord.y + 'px';
+          badge.innerText = `+${grupo.length}`;
+          badge.onclick = (e) => {
+            e.stopPropagation();
+            abrirSubPodioCasilla(casillaNum, grupo);
+          };
+          mapa.appendChild(badge);
+        }
+      });
+    }
+
+    function abrirSubPodioCasilla(casillaNum, grupo) {
+      document.getElementById('subPodioTitulo').innerText = `Casilla ${casillaNum} (${grupo.length} Jugadores)`;
+      const container = document.getElementById('subPodioContainer');
+      container.innerHTML = "";
+
+      const ordenados = [...grupo].sort((a, b) => b.racha - a.racha);
+
+      ordenados.forEach(u => {
+        const sec = u.seccionAlcanzada || u.secActual || 0;
+        const foto = u.fotoUrl || u.foto || AVATAR_DEFECTO;
+        const card = document.createElement('div');
+        card.className = 'podium-card';
+        card.style.cursor = 'pointer';
+        card.innerHTML = `
+          <div class="podium-avatar" style="background-image: url('${foto}')"></div>
+          <div class="podium-info">
+            <div class="podium-name">${u.apodo}</div>
+            <div class="podium-stats">Sección ${sec} • 🔥 ${u.racha} Días de Racha</div>
+          </div>
+          <div style="font-size: 1.2rem;">👉</div>
+        `;
+        card.onclick = () => {
+          cerrarModal('modalSubPodio');
+          mostrarFichaUsuario(u);
+        };
+        container.appendChild(card);
+      });
+
+      abrirModal('modalSubPodio');
+    }
+
+    function mostrarTop4() {
+      const podioContainer = document.getElementById('podiumContainer');
+      podioContainer.innerHTML = "";
+
+      if (!listaUsuariosGlobal || listaUsuariosGlobal.length === 0) {
+        podioContainer.innerHTML = `<div style="text-align:center; font-weight:700; color:#888;">Cargando competidores...</div>`;
+        abrirModal('modalTop4');
+        return;
+      }
+
+      const ordenados = [...listaUsuariosGlobal].sort((a, b) => {
+        const secA = a.seccionAlcanzada || a.secActual || 0;
+        const secB = b.seccionAlcanzada || b.secActual || 0;
+        if (secB !== secA) return secB - secA;
+        return b.racha - a.racha;
+      }).slice(0, 4);
+
+      const medallas = ['🥇', '🥈', '🥉', '4º'];
+
+      ordenados.forEach((u, idx) => {
+        const sec = u.seccionAlcanzada || u.secActual || 0;
+        const foto = u.fotoUrl || u.foto || AVATAR_DEFECTO;
+        const esCumplidor = sec >= 100;
+        
+        const card = document.createElement('div');
+        card.className = `podium-card ${esCumplidor ? 'podium-card-gold' : ('podium-card-' + (idx + 1))}`;
+        
+        const statsTexto = esCumplidor 
+          ? `🏅 Cumplidor del Reto` 
+          : `Sección ${sec} • 🔥 ${u.racha} Días de Racha`;
+
+        card.innerHTML = `
+          <div class="podium-rank">${medallas[idx]}</div>
+          <div class="podium-avatar" style="background-image: url('${foto}')"></div>
+          <div class="podium-info">
+            <div class="podium-name">${u.apodo}</div>
+            <div class="podium-stats">${statsTexto}</div>
+          </div>
+        `;
+        podioContainer.appendChild(card);
+      });
+
+      abrirModal('modalTop4');
+    }
+
+    function mostrarFichaUsuario(u) {
+      const sec = u.seccionAlcanzada || u.secActual || 0;
+      const foto = u.fotoUrl || u.foto || AVATAR_DEFECTO;
+      document.getElementById('fichaFoto').style.backgroundImage = `url('${foto}')`;
+      document.getElementById('fichaNombre').innerText = u.apodo;
+      document.getElementById('fichaLema').innerText = u.lema ? `"${u.lema}"` : "¡En camino a las naciones!";
+      document.getElementById('fichaSeccion').innerText = `Sección ${sec}`;
+      document.getElementById('fichaRacha').innerText = `🔥 ${u.racha}`;
+      abrirModal('modalFicha');
+    }
+
+    function obtenerCoordenadaPorNivel(casilla) {
+      const num = parseInt(casilla, 10) || 1;
+      const idx = Math.min(Math.max(num - 1, 0), TOTAL_NIVELES - 1);
+      return COORDENADAS[idx];
+    }
+
+    function optimizarImagen(file, maxAncho = 320, calidad = 0.5) {
+      return new Promise((resolve) => {
+        if (!file) { resolve(""); return; }
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let ancho = img.width;
+            let alto = img.height;
+
+            if (ancho > maxAncho) {
+              alto = Math.round((alto * maxAncho) / ancho);
+              ancho = maxAncho;
+            }
+
+            canvas.width = ancho;
+            canvas.height = alto;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, ancho, alto);
+            ctx.drawImage(img, 0, 0, ancho, alto);
+            
+            resolve(canvas.toDataURL('image/jpeg', calidad));
+          };
+        };
+      });
+    }
+
+    function lanzarConfeti() {
+      const container = document.getElementById('confettiContainer');
+      container.innerHTML = "";
+      const colores = ['#FFC800', '#58CC02', '#1CB0F6', '#FF4B4B', '#FFFFFF'];
+      
+      for (let i = 0; i < 40; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+        piece.style.animationDelay = (Math.random() * 2.5) + 's';
+        container.appendChild(piece);
+      }
+    }
+
+    async function guardarRegistro(e) {
+      e.preventDefault();
+      const fotoFile = document.getElementById('regFoto').files[0];
+      if (!fotoFile) { alert("Por favor selecciona una foto."); return; }
+
+      document.getElementById('loadRegistro').style.display = 'block';
+      const fotoOptimizado = await optimizarImagen(fotoFile, 320, 0.5);
+
+      const datos = {
+        action: 'registrarUsuario',
+        apodo: document.getElementById('regApodo').value,
+        password: document.getElementById('regPassword').value,
+        telefono: document.getElementById('regTelefono').value,
+        racha: document.getElementById('regRacha').value,
+        lema: document.getElementById('regLema').value,
+        fotoBase64: fotoOptimizado
+      };
+
+      try {
+        const resp = await fetch(API_URL, {
+          method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(datos)
+        });
+        const res = await resp.json();
+
+        document.getElementById('loadRegistro').style.display = 'none';
+        if (res.exito) {
+          cerrarModal('modalRegistro');
+          document.getElementById('tituloCeleb').innerText = "¡Bienvenido al Reto!";
+          document.getElementById('msgCeleb').innerText = "Perfil creado exitosamente en el Palco de Inicio (Casilla 0). Prepárate para avanzar hacia las naciones.";
+          abrirModal('modalCelebracion');
+          cargarUsuarios();
+          document.getElementById('formRegistro').reset();
+        } else {
+          alert(res.mensaje);
+        }
+      } catch (err) {
+        document.getElementById('loadRegistro').style.display = 'none';
+        alert("Error de conexión: " + err.message);
+      }
+    }
+
+    async function guardarActualizacion(e) {
+      e.preventDefault();
+      const evFile = document.getElementById('actEvidencia').files[0];
+      if (!evFile) { alert("Por favor selecciona tu foto de evidencia."); return; }
+
+      document.getElementById('loadActualizar').style.display = 'block';
+      const evOptimizado = await optimizarImagen(evFile, 320, 0.5);
+
+      const datos = {
+        action: 'actualizarEstatus',
+        apodo: document.getElementById('actApodo').value,
+        password: document.getElementById('actPassword').value,
+        seccion: document.getElementById('actSeccion').value,
+        racha: document.getElementById('actRacha').value,
+        aprendizaje: document.getElementById('actAprendizaje').value,
+        evidenciaBase64: evOptimizado
+      };
+
+      try {
+        const resp = await fetch(API_URL, {
+          method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(datos)
+        });
+        const res = await resp.json();
+
+        document.getElementById('loadActualizar').style.display = 'none';
+        if (res.exito) {
+          cerrarModal('modalActualizar');
+          
+          if (res.seccionAlcanzada >= 100) {
+            lanzarConfeti();
+            abrirModal('modalVictoria');
+          } else {
+            document.getElementById('tituloCeleb').innerText = "Avance actualizado";
+            document.getElementById('msgCeleb').innerText = "¡Cada vez estás más cerca de cumplir el reto y servir en las naciones! 🌍🔥";
+            abrirModal('modalCelebracion');
+          }
+          
+          cargarUsuarios();
+          document.getElementById('formActualizar').reset();
+        } else {
+          alert(res.mensaje);
+        }
+      } catch (err) {
+        document.getElementById('loadActualizar').style.display = 'none';
+        alert("Error al guardar: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
